@@ -3,8 +3,8 @@
 
 ## Gantt  :  
 
-![Première version du Gantt](https://github.com/2lazycoffee2/BotataServer/blob/main/Gantt%20et%20UML/Gantt.png)
+![Première version du Gantt](https://github.com/2lazycoffee2/BotataClient/blob/main/Gantt_UML/Gantt_Botata.jpeg)
 
 ## UML : 
 
-![Modélisation UML du projet](https://github.com/2lazycoffee2/BotataServer/blob/main/Gantt%20et%20UML/UML.png)
+![Modélisation UML du projet](https://github.com/2lazycoffee2/BotataClient/blob/main/Gantt_UML/UML_Botata.jpeg)
