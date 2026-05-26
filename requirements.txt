@@ -1,0 +1,25 @@
+# Botata Client - Dependencies
+# GUI
+PyQt6>=6.6.0
+
+# Networking
+requests>=2.31.0
+
+# Async Qt integration
+qasync>=0.27.1
+
+# Data processing
+numpy>=1.26.0
+
+# Image processing (color calibration)
+Pillow>=10.0.0
+
+# Development & Testing
+pytest>=7.4.0
+pytest-qt>=4.4.0
+ruff>=0.1.0
+black>=23.0.0
+
+# Real Marty the Robot API
+martypy>=2.5.0
+

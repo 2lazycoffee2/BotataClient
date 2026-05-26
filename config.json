@@ -1,0 +1,25 @@
+{
+  "robot": {
+    "default_ip": "192.168.0.111",
+    "default_port": 9559,
+    "connection_timeout": 5.0,
+    "reconnect_delay": 2.0,
+    "reconnect_max_delay": 30.0
+  },
+  "server": {
+    "url": "http://localhost:8000/api",
+    "timeout": 5.0,
+    "state_send_interval": 5.0
+  },
+  "monitoring": {
+    "battery_poll_interval": 10.0,
+    "color_poll_interval": 2.0,
+    "battery_low_threshold": 20
+  },
+  "color": {
+    "tolerance": 30.0,
+    "calibration_file": "calibration.json"
+  },
+  "window_width": 1280,
+  "window_height": 800
+}
