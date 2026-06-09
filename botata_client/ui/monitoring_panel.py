@@ -46,6 +46,7 @@ class MonitoringPanel(QWidget):
     """Panneau principal de monitoring : batterie + capteur + chorégraphie."""
 
     execute_act_requested = pyqtSignal()
+    test_act_requested = pyqtSignal(object)
     auto_mode_toggled = pyqtSignal(bool)
 
     def __init__(self, parent=None):
@@ -148,16 +149,23 @@ class MonitoringPanel(QWidget):
         )
         act_layout = QVBoxLayout(act_group)
 
-        # Tableau de correspondance couleur → actions
+        # Tableau d'édition des correspondances couleur → actions
         self._act_table = QTableWidget(4, 5)
         self._act_table.setHorizontalHeaderLabels(
-            ["Couleur", "Yeux LED", "Sourcils", "Bras", "Pas"]
+            ["Couleur", "Sourcils", "Bras", "Pas", "Test"]
         )
         self._act_table.verticalHeader().setVisible(False)
-        self._act_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self._act_table.setSelectionMode(QTableWidget.SelectionMode.NoSelection)
-        self._act_table.setMaximumHeight(160)
-        self._act_table.horizontalHeader().setStretchLastSection(True)
+        self._act_table.setMinimumHeight(200)
+        
+        header = self._act_table.horizontalHeader()
+        from PyQt6.QtWidgets import QHeaderView
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
+
         self._populate_act_table()
         act_layout.addWidget(self._act_table)
 
@@ -174,7 +182,7 @@ class MonitoringPanel(QWidget):
         # Boutons
         btn_row = QHBoxLayout()
 
-        self._btn_execute = QPushButton("▶  Exécuter ACT")
+        self._btn_execute = QPushButton("▶  Exécuter ACT (Couleur lue)")
         self._btn_execute.setFixedHeight(34)
         self._btn_execute.setStyleSheet(
             "QPushButton { background-color: #2d7d46; color: white; border-radius: 6px; "
@@ -212,39 +220,91 @@ class MonitoringPanel(QWidget):
         main_layout.addStretch()
 
     def _populate_act_table(self) -> None:
-        """Remplit le tableau des règles ACT par défaut."""
+        """Remplit le tableau avec des widgets d'édition pour modifier DEFAULT_ACT_RULES."""
+        from PyQt6.QtWidgets import QSpinBox, QComboBox
+        from botata_client.models.act_rules import ArmAction, StepAction
+        
         color_styles = {
             StandardColor.R: ("#ff4444", "Rouge"),
             StandardColor.G: ("#44cc44", "Vert"),
             StandardColor.B: ("#4488ff", "Bleu"),
             StandardColor.N: ("#888888", "Noir"),
         }
+
+        # Dictionnaires pour la configuration UI -> Actions
+        bras_options = {
+            "XNT (Neutre)": [],
+            "ALU (Bras G levé)": [ArmAction("left arm", 90)],
+            "ALB (Bras G baissé)": [ArmAction("left arm", -90)],
+            "ARU (Bras D levé)": [ArmAction("right arm", 90)],
+            "ARB (Bras D baissé)": [ArmAction("right arm", -90)],
+            "ALU + ARB": [ArmAction("left arm", 90), ArmAction("right arm", -90)],
+            "ALU + ARU (Deux levés)": [ArmAction("left arm", 90), ArmAction("right arm", 90)],
+        }
+        pas_options = {
+            "XNT (Aucun)": None,
+            "1U (1 pas avant)": StepAction(1, 25),
+            "2U (2 pas avant)": StepAction(2, 25),
+            "1B (1 pas arrière)": StepAction(1, -25),
+            "2B (2 pas arrière)": StepAction(2, -25),
+        }
+
         for row, std_color in enumerate([StandardColor.R, StandardColor.G, StandardColor.B, StandardColor.N]):
             rule = DEFAULT_ACT_RULES[std_color]
             style_color, name = color_styles[std_color]
 
-            # Couleur
+            # 0. Couleur
             item_color = QTableWidgetItem(f"  {name}")
             item_color.setForeground(QColor(style_color))
             item_color.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+            item_color.setFlags(Qt.ItemFlag.ItemIsEnabled)
             self._act_table.setItem(row, 0, item_color)
 
-            # Yeux LED
-            r, g, b = rule.eye_color
-            item_eyes = QTableWidgetItem(f"({r},{g},{b})")
-            item_eyes.setForeground(QColor(r, g, b))
-            self._act_table.setItem(row, 1, item_eyes)
+            # 1. Sourcils (SpinBox)
+            spin_brow = QSpinBox()
+            spin_brow.setRange(-100, 100)
+            spin_brow.setSingleStep(10)
+            spin_brow.setValue(rule.eyebrow_angle)
+            spin_brow.valueChanged.connect(lambda val, r=rule: setattr(r, 'eyebrow_angle', val))
+            self._act_table.setCellWidget(row, 1, spin_brow)
 
-            # Sourcils
-            self._act_table.setItem(row, 2, QTableWidgetItem(f"{rule.eyebrow_angle}°"))
+            # 2. Bras (ComboBox)
+            combo_bras = QComboBox()
+            combo_bras.addItems(list(bras_options.keys()))
+            
+            # Sélectionner l'index actuel (basé sur le code)
+            current_bras_code = " + ".join(a.code for a in rule.arm_actions) if rule.arm_actions else "XNT (Neutre)"
+            for idx, text in enumerate(bras_options.keys()):
+                if current_bras_code in text:
+                    combo_bras.setCurrentIndex(idx)
+                    break
+            
+            combo_bras.currentTextChanged.connect(
+                lambda text, r=rule: setattr(r, 'arm_actions', bras_options[text])
+            )
+            self._act_table.setCellWidget(row, 2, combo_bras)
 
-            # Bras
-            arm_text = " + ".join(a.code for a in rule.arm_actions) if rule.arm_actions else "XNT"
-            self._act_table.setItem(row, 3, QTableWidgetItem(arm_text))
+            # 3. Pas (ComboBox)
+            combo_pas = QComboBox()
+            combo_pas.addItems(list(pas_options.keys()))
+            
+            current_pas_code = rule.step_action.code if rule.step_action else "XNT (Aucun)"
+            for idx, text in enumerate(pas_options.keys()):
+                if current_pas_code in text:
+                    combo_pas.setCurrentIndex(idx)
+                    break
 
-            # Pas
-            step_text = rule.step_action.code if rule.step_action else "—"
-            self._act_table.setItem(row, 4, QTableWidgetItem(step_text))
+            combo_pas.currentTextChanged.connect(
+                lambda text, r=rule: setattr(r, 'step_action', pas_options[text])
+            )
+            self._act_table.setCellWidget(row, 3, combo_pas)
+
+            # 4. Bouton Tester
+            btn_test = QPushButton("Tester")
+            btn_test.setStyleSheet("background-color: #555; color: white; border-radius: 4px; padding: 4px;")
+            # On utilise le signal execute_act_requested mais avec l'envoi direct au moteur via la main_window
+            btn_test.clicked.connect(lambda _, c=std_color: self.test_act_requested.emit(c))
+            self._act_table.setCellWidget(row, 4, btn_test)
 
     def _on_auto_toggled(self, checked: bool) -> None:
         self._btn_auto.setText(f"⚡ Mode Auto : {'ON' if checked else 'OFF'}")

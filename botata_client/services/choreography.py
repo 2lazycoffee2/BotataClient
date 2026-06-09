@@ -150,13 +150,35 @@ class ChoreographyEngine(QObject):
             if rule.arm_actions:
                 arm_codes = " + ".join(a.code for a in rule.arm_actions)
                 self.state_changed.emit(f"Bras : {arm_codes}")
+                
+                left_angle, right_angle = 0, 0
+                has_left, has_right = False, False
+                max_time = 1000
+                
                 for arm in rule.arm_actions:
+                    if arm.joint_name == "left arm":
+                        left_angle = arm.angle
+                        has_left = True
+                    elif arm.joint_name == "right arm":
+                        right_angle = arm.angle
+                        has_right = True
+                    max_time = max(max_time, arm.move_time)
+                
+                if has_left and has_right:
                     self._connection.send_command(
-                        "move_joint",
-                        joint_name=arm.joint_name,
-                        angle=arm.angle,
-                        move_time=arm.move_time,
+                        "arms",
+                        left_angle=left_angle,
+                        right_angle=right_angle,
+                        move_time=max_time,
                     )
+                else:
+                    for arm in rule.arm_actions:
+                        self._connection.send_command(
+                            "move_joint",
+                            joint_name=arm.joint_name,
+                            angle=arm.angle,
+                            move_time=arm.move_time,
+                        )
             self._current_phase = 2
             self._phase_timer.start(self.ARM_DELAY)
 

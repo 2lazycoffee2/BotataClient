@@ -69,6 +69,12 @@ class _Worker(QThread):
                     step_length=int(params.get("step_length", 25)),
                     move_time=int(params.get("move_time", 1500)),
                 )
+            elif cmd == "arms" and hasattr(m, "arms"):
+                m.arms(
+                    int(params.get("left_angle", 0)),
+                    int(params.get("right_angle", 0)),
+                    int(params.get("move_time", 1000)),
+                )
             elif cmd == "move_joint" and hasattr(m, "move_joint"):
                 m.move_joint(
                     params.get("joint_name", "left arm"),

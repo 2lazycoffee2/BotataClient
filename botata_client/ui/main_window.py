@@ -94,6 +94,9 @@ class MainWindow(QMainWindow):
         self.monitoring_panel.execute_act_requested.connect(
             self._on_execute_act
         )
+        self.monitoring_panel.test_act_requested.connect(
+            self.choreography.execute_for_color
+        )
         self.monitoring_panel.auto_mode_toggled.connect(
             self._on_auto_mode_toggled
         )
