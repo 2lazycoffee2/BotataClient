@@ -49,9 +49,14 @@ class ColorConfig:
     calibration_file: str = "calibration.json"
     references: dict[str, list[int]] = field(default_factory=lambda: {
         "R": [255, 0, 0],
+        "O": [255, 165, 0],
+        "Y": [255, 255, 0],
         "G": [0, 255, 0],
         "B": [0, 0, 255],
+        "I": [75, 0, 130],
+        "V": [238, 130, 238],
         "N": [0, 0, 0],
+        "W": [255, 255, 255],
     })
 
     @classmethod
@@ -62,9 +67,14 @@ class ColorConfig:
             calibration_file=data.get("calibration_file", "calibration.json"),
             references=data.get("references", {
                 "R": [255, 0, 0],
+                "O": [255, 165, 0],
+                "Y": [255, 255, 0],
                 "G": [0, 255, 0],
                 "B": [0, 0, 255],
+                "I": [75, 0, 130],
+                "V": [238, 130, 238],
                 "N": [0, 0, 0],
+                "W": [255, 255, 255],
             }),
         )
 

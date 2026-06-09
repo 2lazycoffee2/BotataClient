@@ -12,7 +12,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
+from typing import Optional, Any
 
 
 # ─── Couleurs standard ────────────────────────────────────────────────
@@ -20,9 +20,14 @@ from typing import Optional
 class StandardColor(Enum):
     """Couleurs standard reconnues par le système ACT."""
     R = "Rouge"
+    O = "Orange"
+    Y = "Jaune"
     G = "Vert"
     B = "Bleu"
+    I = "Indigo"
+    V = "Violet"
     N = "Noir"
+    W = "Blanc"
 
     @property
     def display_name(self) -> str:
@@ -37,9 +42,14 @@ class StandardColor(Enum):
 # Couleurs de référence utilisées par le ColorMapper
 _REFERENCE_COLORS: dict[StandardColor, tuple[int, int, int]] = {
     StandardColor.R: (255, 0, 0),
+    StandardColor.O: (255, 165, 0),
+    StandardColor.Y: (255, 255, 0),
     StandardColor.G: (0, 255, 0),
     StandardColor.B: (0, 0, 255),
+    StandardColor.I: (75, 0, 130),
+    StandardColor.V: (238, 130, 238),
     StandardColor.N: (0, 0, 0),
+    StandardColor.W: (255, 255, 255),
 }
 
 def init_references(config: Any) -> None:
@@ -110,38 +120,45 @@ class ActRule:
 
 
 # ─── Règles ACT par défaut ────────────────────────────────────────────
-
+# Règle ACT par défaut par couleur
 DEFAULT_ACT_RULES: dict[StandardColor, ActRule] = {
     StandardColor.R: ActRule(
-        color=StandardColor.R,
-        eye_color=(255, 0, 0),
-        eyebrow_angle=-30,          # expression colère
-        arm_actions=[
-            ArmAction("left arm", 90, 1000),   # ALU
-        ],
-        step_action=StepAction(1, 25),         # 1U
+        color=StandardColor.R, eye_color=(255, 0, 0), eyebrow_angle=20,
+        arm_actions=[ArmAction("left arm", -90)], step_action=StepAction(1, 25)
+    ),
+    StandardColor.O: ActRule(
+        color=StandardColor.O, eye_color=(255, 165, 0), eyebrow_angle=10,
+        arm_actions=[], step_action=StepAction(2, 25)
+    ),
+    StandardColor.Y: ActRule(
+        color=StandardColor.Y, eye_color=(255, 255, 0), eyebrow_angle=0,
+        arm_actions=[], step_action=StepAction(1, 0)
     ),
     StandardColor.G: ActRule(
-        color=StandardColor.G,
-        eye_color=(0, 255, 0),
-        eyebrow_angle=30,           # expression content
-        arm_actions=[
-            ArmAction("right arm", -90, 1000), # ARB
-        ],
-        step_action=StepAction(2, -25),        # 2B
+        color=StandardColor.G, eye_color=(0, 255, 0), eyebrow_angle=0,
+        arm_actions=[ArmAction("right arm", -90)], step_action=StepAction(1, -25)
     ),
     StandardColor.B: ActRule(
-        color=StandardColor.B,
-        eye_color=(0, 0, 255),
-        eyebrow_angle=50,           # expression surpris
-        arm_actions=[
-            ArmAction("left arm", 90, 1000),   # ALU
-            ArmAction("right arm", -90, 1000), # ARB
-        ],
-        step_action=StepAction(1, 25),         # 1U
+        color=StandardColor.B, eye_color=(0, 0, 255), eyebrow_angle=-20,
+        arm_actions=[ArmAction("left arm", 90), ArmAction("right arm", 90)], step_action=StepAction(1, 0)
+    ),
+    StandardColor.I: ActRule(
+        color=StandardColor.I, eye_color=(75, 0, 130), eyebrow_angle=-10,
+        arm_actions=[], step_action=StepAction(1, 25)
+    ),
+    StandardColor.V: ActRule(
+        color=StandardColor.V, eye_color=(238, 130, 238), eyebrow_angle=0,
+        arm_actions=[], step_action=StepAction(2, -25)
     ),
     StandardColor.N: ActRule(
         color=StandardColor.N,
+        eye_color=(255, 255, 255),
+        eyebrow_angle=0,            # neutre
+        arm_actions=[],             # XNT uniquement
+        step_action=None,           # pas de marche
+    ),
+    StandardColor.W: ActRule(
+        color=StandardColor.W,
         eye_color=(255, 255, 255),
         eyebrow_angle=0,            # neutre
         arm_actions=[],             # XNT uniquement

@@ -28,10 +28,15 @@ if TYPE_CHECKING:
 
 # Correspondance couleur standard → style d'affichage
 _STD_STYLES: dict[StandardColor, tuple[str, str]] = {
-    StandardColor.R: ("#ff4444", "Rouge"),
-    StandardColor.G: ("#44cc44", "Vert"),
-    StandardColor.B: ("#4488ff", "Bleu"),
-    StandardColor.N: ("#888888", "Noir"),
+    StandardColor.R: ("#d9534f", "Rouge"),
+    StandardColor.O: ("#f0ad4e", "Orange"),
+    StandardColor.Y: ("#ffcc00", "Jaune"),
+    StandardColor.G: ("#5cb85c", "Vert"),
+    StandardColor.B: ("#0275d8", "Bleu"),
+    StandardColor.I: ("#4b0082", "Indigo"),
+    StandardColor.V: ("#ee82ee", "Violet"),
+    StandardColor.N: ("#555555", "Noir"),
+    StandardColor.W: ("#cccccc", "Blanc"),
 }
 
 
@@ -61,13 +66,20 @@ class ColorMappingPanel(QWidget):
             "border: 1px solid #444; border-radius: 6px; margin-top: 8px; padding-top: 16px; }"
             "QGroupBox::title { subcontrol-origin: margin; left: 12px; }"
         )
-        legend_layout = QHBoxLayout(legend_group)
-        for std_color in [StandardColor.R, StandardColor.G, StandardColor.B, StandardColor.N]:
+        # Utiliser un layout avec wordwrap ou multi-lignes n'est pas trivial en QHBoxLayout, 
+        # utilisons FlowLayout ou juste une grille simple pour 9 éléments
+        from PyQt6.QtWidgets import QGridLayout
+        legend_layout = QGridLayout(legend_group)
+        r, c = 0, 0
+        for std_color in StandardColor:
             hex_color, name = _STD_STYLES[std_color]
             lbl = QLabel(f"  ● {std_color.name} = {name}  ")
             lbl.setStyleSheet(f"color: {hex_color}; font-weight: bold; font-size: 12px;")
-            legend_layout.addWidget(lbl)
-        legend_layout.addStretch()
+            legend_layout.addWidget(lbl, r, c)
+            c += 1
+            if c >= 5:
+                c = 0
+                r += 1
         layout.addWidget(legend_group)
 
         # ── Dernière lecture ──
@@ -115,19 +127,23 @@ class ColorMappingPanel(QWidget):
         lbl_calib = QLabel("Définir le RGB brut actuel comme :")
         calib_layout.addWidget(lbl_calib)
         
-        from PyQt6.QtWidgets import QPushButton
+        from PyQt6.QtWidgets import QPushButton, QGridLayout
         
-        for color, name, btn_color in [
-            (StandardColor.R, "Rouge", "#d9534f"),
-            (StandardColor.G, "Vert", "#5cb85c"),
-            (StandardColor.B, "Bleu", "#0275d8"),
-            (StandardColor.N, "Noir/Neutre", "#555555")
-        ]:
+        calib_btn_layout = QGridLayout()
+        r, c = 0, 0
+        for color in StandardColor:
+            hex_color, name = _STD_STYLES[color]
             btn = QPushButton(name)
-            btn.setStyleSheet(f"background-color: {btn_color}; color: white; border-radius: 4px; padding: 4px 12px; font-weight: bold;")
+            text_col = "black" if color in (StandardColor.Y, StandardColor.W) else "white"
+            btn.setStyleSheet(f"background-color: {hex_color}; color: {text_col}; border-radius: 4px; padding: 4px 12px; font-weight: bold;")
             btn.clicked.connect(lambda _, c=color: self.calibration_requested.emit(c, self._last_raw_rgb))
-            calib_layout.addWidget(btn)
-        
+            calib_btn_layout.addWidget(btn, r, c)
+            c += 1
+            if c >= 5:
+                c = 0
+                r += 1
+                
+        calib_layout.addLayout(calib_btn_layout)
         calib_layout.addStretch()
         layout.addWidget(calib_group)
 

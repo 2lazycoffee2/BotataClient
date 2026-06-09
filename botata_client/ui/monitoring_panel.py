@@ -225,10 +225,15 @@ class MonitoringPanel(QWidget):
         from botata_client.models.act_rules import ArmAction, StepAction
         
         color_styles = {
-            StandardColor.R: ("#ff4444", "Rouge"),
-            StandardColor.G: ("#44cc44", "Vert"),
-            StandardColor.B: ("#4488ff", "Bleu"),
-            StandardColor.N: ("#888888", "Noir"),
+            StandardColor.R: ("#d9534f", "Rouge"),
+            StandardColor.O: ("#f0ad4e", "Orange"),
+            StandardColor.Y: ("#ffcc00", "Jaune"),
+            StandardColor.G: ("#5cb85c", "Vert"),
+            StandardColor.B: ("#0275d8", "Bleu"),
+            StandardColor.I: ("#4b0082", "Indigo"),
+            StandardColor.V: ("#ee82ee", "Violet"),
+            StandardColor.N: ("#555555", "Noir"),
+            StandardColor.W: ("#cccccc", "Blanc"),
         }
 
         # Dictionnaires pour la configuration UI -> Actions
@@ -249,8 +254,14 @@ class MonitoringPanel(QWidget):
             "2B (2 pas arrière)": StepAction(2, -25),
         }
 
-        for row, std_color in enumerate([StandardColor.R, StandardColor.G, StandardColor.B, StandardColor.N]):
-            rule = DEFAULT_ACT_RULES[std_color]
+        for row, std_color in enumerate(StandardColor):
+            rule = DEFAULT_ACT_RULES.get(std_color)
+            if not rule:
+                # Créer une règle vide par défaut pour les nouvelles couleurs non configurées
+                rule = ActRule(color=std_color, eye_color=(255,255,255), eyebrow_angle=0)
+                DEFAULT_ACT_RULES[std_color] = rule
+                
+            self._act_table.insertRow(row)
             style_color, name = color_styles[std_color]
 
             # 0. Couleur
@@ -351,10 +362,15 @@ class MonitoringPanel(QWidget):
 
         # Couleur du label selon la standard
         style_map = {
-            StandardColor.R: "#ff4444",
-            StandardColor.G: "#44cc44",
-            StandardColor.B: "#4488ff",
-            StandardColor.N: "#aaaaaa",
+            StandardColor.R: "#d9534f",
+            StandardColor.O: "#f0ad4e",
+            StandardColor.Y: "#ffcc00",
+            StandardColor.G: "#5cb85c",
+            StandardColor.B: "#0275d8",
+            StandardColor.I: "#4b0082",
+            StandardColor.V: "#ee82ee",
+            StandardColor.N: "#555555",
+            StandardColor.W: "#cccccc",
         }
         self._std_color_label.setStyleSheet(f"color: {style_map.get(color, '#aaa')};")
         self._confidence_label.setText(f"Confiance: {confidence:.0%}")
