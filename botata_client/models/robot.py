@@ -16,11 +16,10 @@ class ConnectionState(Enum):
 class RobotInfo:
     """Informations de base sur un robot trouvé sur le réseau."""
     ip: str              # Adresse IP du robot 
-    port: int            # Port de connexion 
     name: str = "Robot"  # Nom d'affichage du robot
     is_marty: bool = False  # True s'il s'agit d'un robot Marty réel
 
     @property
     def address(self) -> str:
-        """Retourne l'adresse sous forme 'IP:Port'."""
-        return f"{self.ip}:{self.port}"
+        """Retourne l'adresse IP du robot."""
+        return self.ip
