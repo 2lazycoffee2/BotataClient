@@ -8,6 +8,7 @@ from botata_client.services.choreography import ChoreographyEngine
 from botata_client.ui.connection_panel import ConnectionPanel
 from botata_client.ui.monitoring_panel import MonitoringPanel
 from botata_client.ui.color_mapping_panel import ColorMappingPanel
+from botata_client.ui.dance_creator_panel import DanceCreatorPanel
 from botata_client.utils.config import AppConfig
 from botata_client.utils.logger import log
 
@@ -45,6 +46,10 @@ class MainWindow(QMainWindow):
         # Onglet 3 : Couleurs
         self.color_mapping_panel = ColorMappingPanel()
         self.tabs.addTab(self.color_mapping_panel, "🎨 Couleurs")
+
+        # Onglet 4 : Créateur de chorégraphie
+        self.dance_creator_panel = DanceCreatorPanel()
+        self.tabs.addTab(self.dance_creator_panel, "💃 Créateur")
 
         # ── Barre de statut ──
         sb = QStatusBar()
@@ -109,6 +114,14 @@ class MainWindow(QMainWindow):
             self._on_calibration_requested
         )
 
+        # Dance Creator Panel → Chorégraphie
+        self.dance_creator_panel.play_requested.connect(
+            self.choreography.play_keyframes
+        )
+        self.dance_creator_panel.send_position_requested.connect(
+            self._on_send_position
+        )
+
     # ── Handlers ──────────────────────────────────────────────────────
 
     def _on_connection_state_changed(self, state) -> None:
@@ -166,6 +179,12 @@ class MainWindow(QMainWindow):
         
         log.info(f"Calibration enregistrée : {std_color.name} = {rgb}")
         self.status_color.setText(f"🎨 Calibré : {std_color.name} = {rgb}")
+
+    def _on_send_position(self, joints: dict[str, int], move_time: int) -> None:
+        """Appelé lorsque le créateur veut envoyer une position absolue."""
+        self.robot_connection.send_command(
+            "move_joints", joints=joints, move_time=move_time
+        )
 
     # ── Nettoyage ─────────────────────────────────────────────────────
 

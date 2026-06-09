@@ -230,3 +230,78 @@ class ChoreographyEngine(QObject):
             self._rules.clear()
             self.sequence_finished.emit()
             self.state_changed.emit("Séquence terminée")
+
+    # ── Lecture de Keyframes (.dance) ─────────────────────────────────
+
+    def play_keyframes(self, keyframes: list) -> None:
+        """Joue une liste de Keyframe sequentiellement via QTimer."""
+        if self._running:
+            log.warning("Chorégraphie déjà en cours, ignoré.")
+            return
+        if not keyframes:
+            return
+
+        self._kf_list = list(keyframes)
+        self._kf_index = 0
+        self._running = True
+        self.state_changed.emit("Lecture keyframes...")
+        log.info(f"Début lecture de {len(keyframes)} keyframes")
+        self._play_next_keyframe()
+
+    def _play_next_keyframe(self) -> None:
+        """Envoie le keyframe courant au robot et programme le suivant."""
+        if self._kf_index >= len(self._kf_list):
+            # Fin de la séquence de keyframes
+            self._running = False
+            self._kf_list = []
+            self.state_changed.emit("Lecture terminée")
+            self.sequence_finished.emit()
+            log.info("Lecture keyframes terminée.")
+            return
+
+        kf = self._kf_list[self._kf_index]
+        idx = self._kf_index + 1
+        total = len(self._kf_list)
+        self.state_changed.emit(f"Keyframe {idx}/{total}")
+        self.step_started.emit(self._kf_index, f"KF{idx} (time={kf.move_time}ms)")
+
+        # Envoyer les joints
+        self._connection.send_command(
+            "move_joints", joints=kf.joints, move_time=kf.move_time
+        )
+
+        # Envoyer la couleur des yeux si définie
+        if kf.eye_color:
+            self._connection.send_command(
+                "eyes_color", color=kf.eye_color, add_on="eyes"
+            )
+
+        self._kf_index += 1
+
+        # Programmer le prochain keyframe après move_time + petit délai
+        delay = kf.move_time + 200
+        QTimer.singleShot(delay, self._play_next_keyframe)
+
+    def play_dance(self, dance) -> None:
+        """Joue un DanceFile complet : d'abord la séquence SEQ/ACT, puis les keyframes."""
+        if self._running:
+            log.warning("Chorégraphie déjà en cours, ignoré.")
+            return
+
+        # Si le dance a des keyframes, les jouer
+        if dance.keyframes:
+            self.play_keyframes(dance.keyframes)
+        # Sinon, jouer la séquence ACT expandée
+        elif dance.seq:
+            expanded = dance.get_expanded_seq()
+            rules = []
+            for color_name in expanded:
+                color_name = color_name.strip().upper()
+                for sc in StandardColor:
+                    if sc.name == color_name:
+                        rule = DEFAULT_ACT_RULES.get(sc)
+                        if rule:
+                            rules.append(rule)
+                        break
+            if rules:
+                self.run_sequence(rules)

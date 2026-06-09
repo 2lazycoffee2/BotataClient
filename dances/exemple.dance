@@ -1,0 +1,16 @@
+# Fichier .dance - Botata Client
+NAME: Danse Exemple
+MVS: 4
+TEMPO: 800
+
+SEQ: R, G, B, Y
+
+ACT:
+  R -> eyes=(255,0,0) brows=20 arms=ALU step=1U
+  G -> eyes=(0,255,0) brows=0 arms=ARD step=1D
+  B -> eyes=(0,0,255) brows=-20 arms=ALU+ARU step=1R
+  Y -> eyes=(255,255,0) brows=0 arms=XNT step=2B
+
+KEYFRAMES:
+  KF1: left_hip=30 left_knee=-20 right_hip=30 right_knee=-20 left_arm=90 right_arm=-90 eyes=0 | time=800 eyes_rgb=(255,0,0)
+  KF2: left_hip=0 left_knee=0 right_hip=0 right_knee=0 left_arm=0 right_arm=0 eyes=0 | time=500 eyes_rgb=(0,255,0)

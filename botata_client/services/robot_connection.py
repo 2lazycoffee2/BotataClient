@@ -105,6 +105,15 @@ class _Worker(QThread):
                 m.disco_color()
             elif cmd == "disco_color_eyepicker" and hasattr(m, "disco_color_eyepicker"):
                 m.disco_color_eyepicker()
+            elif cmd == "move_joints":
+                # Envoyer plusieurs joints simultanément (keyframe complet)
+                joints = params.get("joints", {})
+                move_time = int(params.get("move_time", 800))
+                for joint_name, angle in joints.items():
+                    try:
+                        m.move_joint(joint_name, int(angle), move_time)
+                    except Exception:
+                        pass
         except Exception as e:
             from botata_client.utils.logger import log
             log.error(f"Erreur exécution commande '{cmd}': {e}")
