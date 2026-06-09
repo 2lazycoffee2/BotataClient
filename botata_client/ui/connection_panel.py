@@ -25,17 +25,15 @@ class ConnectionPanel(QWidget):
         hl = QHBoxLayout()
         self.scan = QPushButton("Scanner")
         self.connect_btn = QPushButton("Connecter")
-        self.disconnect = QPushButton("Déconnecter")
         self.ip = QLineEdit(self._config.robot.default_ip)
         self.list = QListWidget()
         l.addWidget(QLabel("Connexion Marty"))
         hl.addWidget(self.scan); hl.addWidget(self.ip); hl.addWidget(self.connect_btn)
-        l.addLayout(hl); l.addWidget(self.list); l.addWidget(self.disconnect)
+        l.addLayout(hl); l.addWidget(self.list)
 
     def _bind(self):
         self.scan.clicked.connect(self._on_scan)
         self.connect_btn.clicked.connect(self._on_connect_manual)
-        self.disconnect.clicked.connect(self._on_disconnect)
         self._connection.connection_changed.connect(self._on_connection_changed)
 
     def _on_scan(self):
@@ -59,14 +57,22 @@ class ConnectionPanel(QWidget):
         self._found.append(info); self.list.addItem(f"{info.name} ({info.address})")
 
     def _on_connect_manual(self):
-        ip = self.ip.text().strip() or self._config.robot.default_ip
-        self._connection.connect_to_robot(ip)
-
-    def _on_disconnect(self):
-        self._connection.disconnect_from_robot()
+        if self._connection.is_connected:
+            self._connection.disconnect_from_robot()
+        else:
+            ip = self.ip.text().strip() or self._config.robot.default_ip
+            self._connection.connect_to_robot(ip)
 
     def _on_connection_changed(self, state: ConnectionState):
         if state == ConnectionState.CONNECTED:
-            self.disconnect.setEnabled(True)
+            self.connect_btn.setText("Déconnecter")
+            self.connect_btn.setStyleSheet("background-color: #d9534f; color: white; font-weight: bold;")
+            self.connect_btn.setEnabled(True)
+        elif state == ConnectionState.CONNECTING:
+            self.connect_btn.setText("Connexion...")
+            self.connect_btn.setStyleSheet("background-color: #f0ad4e; color: white;")
+            self.connect_btn.setEnabled(False)
         else:
-            self.disconnect.setEnabled(False)
+            self.connect_btn.setText("Connecter")
+            self.connect_btn.setStyleSheet("background-color: #5cb85c; color: white; font-weight: bold;")
+            self.connect_btn.setEnabled(True)

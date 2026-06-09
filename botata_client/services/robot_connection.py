@@ -112,11 +112,31 @@ class _Worker(QThread):
     def _collect_telemetry(self, m: Any) -> dict[str, Any]:
         battery_level = int(_safe(m, "get_battery_remaining", 0))
         battery_voltage = float(_safe(m, "get_battery_voltage", 0.0))
-        color = str(_safe(m, "get_color_sensor_color", "unknown"))
-        color_hex = str(_safe(m, "get_color_sensor_hex", "#000000"))
-        color_rgb = _safe(m, "get_color_sensor_value_by_channel", [])
-        if isinstance(color_rgb, (tuple, list)):
-            color_rgb = [int(x) for x in color_rgb]
+        
+        color = "unknown"
+        color_hex = "#000000"
+        color_rgb = []
+        
+        for side in ("left", "right"):
+            c = str(_safe(m, "get_color_sensor_color", "unknown", side))
+            if c not in ("unknown", "None", ""):
+                color = c
+                h = str(_safe(m, "get_color_sensor_hex", "#000000", side))
+                color_hex = h
+                if len(h) >= 7 and h.startswith("#"):
+                    try:
+                        color_rgb = [int(h[1:3], 16), int(h[3:5], 16), int(h[5:7], 16)]
+                    except ValueError:
+                        pass
+                
+                # Sécurité : lire les canaux bruts si le hex est invalide
+                if not color_rgb:
+                    r = _safe(m, "get_color_sensor_value_by_channel", 0, side, "red")
+                    g = _safe(m, "get_color_sensor_value_by_channel", 0, side, "green")
+                    b = _safe(m, "get_color_sensor_value_by_channel", 0, side, "blue")
+                    if r is not None and g is not None and b is not None:
+                        color_rgb = [int(r), int(g), int(b)]
+                break
 
         return {
             "battery_level": battery_level,
