@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont
 from PyQt6.QtWidgets import (
     QGroupBox,
@@ -38,10 +38,13 @@ _STD_STYLES: dict[StandardColor, tuple[str, str]] = {
 class ColorMappingPanel(QWidget):
     """Panneau de correspondance couleur brute ↔ couleur standard."""
 
+    calibration_requested = pyqtSignal(object, object)  # StandardColor, tuple[int, int, int]
+
     MAX_ROWS = 20
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._last_raw_rgb = (0, 0, 0)
         self._build_ui()
 
     # ── Construction UI ───────────────────────────────────────────────
@@ -100,6 +103,34 @@ class ColorMappingPanel(QWidget):
         current_layout.addStretch()
         layout.addWidget(current_group)
 
+        # ── Calibration ──
+        calib_group = QGroupBox("🎯 Calibrer la couleur courante")
+        calib_group.setStyleSheet(
+            "QGroupBox { font-weight: bold; font-size: 13px; "
+            "border: 1px solid #444; border-radius: 6px; margin-top: 8px; padding-top: 16px; }"
+            "QGroupBox::title { subcontrol-origin: margin; left: 12px; }"
+        )
+        calib_layout = QHBoxLayout(calib_group)
+        
+        lbl_calib = QLabel("Définir le RGB brut actuel comme :")
+        calib_layout.addWidget(lbl_calib)
+        
+        from PyQt6.QtWidgets import QPushButton
+        
+        for color, name, btn_color in [
+            (StandardColor.R, "Rouge", "#d9534f"),
+            (StandardColor.G, "Vert", "#5cb85c"),
+            (StandardColor.B, "Bleu", "#0275d8"),
+            (StandardColor.N, "Noir/Neutre", "#555555")
+        ]:
+            btn = QPushButton(name)
+            btn.setStyleSheet(f"background-color: {btn_color}; color: white; border-radius: 4px; padding: 4px 12px; font-weight: bold;")
+            btn.clicked.connect(lambda _, c=color: self.calibration_requested.emit(c, self._last_raw_rgb))
+            calib_layout.addWidget(btn)
+        
+        calib_layout.addStretch()
+        layout.addWidget(calib_group)
+
         # ── Historique ──
         history_group = QGroupBox("📋 Historique des relevés")
         history_group.setStyleSheet(
@@ -143,6 +174,8 @@ class ColorMappingPanel(QWidget):
         """Ajoute un nouveau relevé couleur au tableau."""
         # Mettre à jour la dernière lecture
         r, g, b = reading.raw_rgb[:3] if len(reading.raw_rgb) >= 3 else (0, 0, 0)
+        self._last_raw_rgb = (r, g, b)
+        
         self._current_raw_label.setText(f"RGB brut : ({r}, {g}, {b})")
         self._current_hex_label.setText(f"Hex : {reading.hex_value}")
 

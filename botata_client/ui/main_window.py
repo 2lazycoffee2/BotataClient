@@ -103,6 +103,11 @@ class MainWindow(QMainWindow):
         self.monitoring_panel.neutral_button.clicked.connect(
             self.choreography.return_to_neutral
         )
+        
+        # Color Mapping Panel → MainWindow
+        self.color_mapping_panel.calibration_requested.connect(
+            self._on_calibration_requested
+        )
 
     # ── Handlers ──────────────────────────────────────────────────────
 
@@ -149,6 +154,18 @@ class MainWindow(QMainWindow):
 
     def _on_auto_mode_toggled(self, enabled: bool) -> None:
         self.choreography.auto_mode = enabled
+
+    def _on_calibration_requested(self, std_color: StandardColor, rgb: tuple[int, int, int]) -> None:
+        """Appelé lorsque l'utilisateur veut calibrer une couleur."""
+        from botata_client.models.act_rules import update_reference_color
+        update_reference_color(std_color, rgb)
+        
+        # Sauvegarder dans la configuration
+        self._config.color.references[std_color.name] = list(rgb)
+        self._config.save()
+        
+        log.info(f"Calibration enregistrée : {std_color.name} = {rgb}")
+        self.status_color.setText(f"🎨 Calibré : {std_color.name} = {rgb}")
 
     # ── Nettoyage ─────────────────────────────────────────────────────
 

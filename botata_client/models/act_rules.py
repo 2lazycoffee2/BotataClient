@@ -42,6 +42,17 @@ _REFERENCE_COLORS: dict[StandardColor, tuple[int, int, int]] = {
     StandardColor.N: (0, 0, 0),
 }
 
+def init_references(config: Any) -> None:
+    """Initialise les couleurs de référence depuis la configuration."""
+    for std_color in StandardColor:
+        if std_color.name in config.color.references:
+            rgb = config.color.references[std_color.name]
+            _REFERENCE_COLORS[std_color] = tuple(rgb)
+
+def update_reference_color(std_color: StandardColor, rgb: tuple[int, int, int]) -> None:
+    """Met à jour une couleur de référence en mémoire."""
+    _REFERENCE_COLORS[std_color] = rgb
+
 
 # ─── Règle ACT ────────────────────────────────────────────────────────
 

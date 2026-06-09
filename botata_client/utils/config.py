@@ -1,7 +1,7 @@
 # Configuration simple de l'application Botata Client.
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -47,6 +47,12 @@ class ColorConfig:
     """Configuration de la correspondance couleur brute → standard."""
     tolerance: float = 30.0
     calibration_file: str = "calibration.json"
+    references: dict[str, list[int]] = field(default_factory=lambda: {
+        "R": [255, 0, 0],
+        "G": [0, 255, 0],
+        "B": [0, 0, 255],
+        "N": [0, 0, 0],
+    })
 
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None = None) -> "ColorConfig":
@@ -54,6 +60,12 @@ class ColorConfig:
         return cls(
             tolerance=data.get("tolerance", 30.0),
             calibration_file=data.get("calibration_file", "calibration.json"),
+            references=data.get("references", {
+                "R": [255, 0, 0],
+                "G": [0, 255, 0],
+                "B": [0, 0, 255],
+                "N": [0, 0, 0],
+            }),
         )
 
 
@@ -86,6 +98,7 @@ class AppConfig:
             "color": {
                 "tolerance": self.color.tolerance,
                 "calibration_file": self.color.calibration_file,
+                "references": self.color.references,
             },
             "window_width": self.window_width,
             "window_height": self.window_height,

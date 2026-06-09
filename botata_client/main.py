@@ -18,6 +18,9 @@ def main():
     config = AppConfig.load()
     log.info("Configuration chargée.")
 
+    from botata_client.models.act_rules import init_references
+    init_references(config)
+
     # Créer l'application Qt
     app = QApplication(sys.argv)
     app.setApplicationName("Botata Client")
