@@ -60,14 +60,48 @@ class _Worker(QThread):
 
     def _execute_command(self, m: Any, command: str, params: dict[str, Any]) -> None:
         cmd = command.lower()
-        if cmd == "stop" and hasattr(m, "stop"):
-            m.stop()
-        elif cmd == "move" and hasattr(m, "walk"):
-            m.walk(num_steps=int(params.get("steps", 1)), speed=int(params.get("speed", 50)))
-        elif cmd == "disco_color" and hasattr(m, "disco_color"):
-            m.disco_color()
-        elif cmd == "disco_color_eyepicker" and hasattr(m, "disco_color_eyepicker"):
-            m.disco_color_eyepicker()
+        try:
+            if cmd == "stop" and hasattr(m, "stop"):
+                m.stop()
+            elif cmd == "walk" and hasattr(m, "walk"):
+                m.walk(
+                    num_steps=int(params.get("num_steps", 1)),
+                    step_length=int(params.get("step_length", 25)),
+                    move_time=int(params.get("move_time", 1500)),
+                )
+            elif cmd == "move_joint" and hasattr(m, "move_joint"):
+                m.move_joint(
+                    params.get("joint_name", "left arm"),
+                    int(params.get("angle", 0)),
+                    int(params.get("move_time", 1000)),
+                )
+            elif cmd == "eyes_color" and hasattr(m, "disco_color"):
+                color = params.get("color", (255, 255, 255))
+                add_on = params.get("add_on", "eyes")
+                m.disco_color(color, add_on)
+            elif cmd == "eyebrows" and hasattr(m, "move_joint"):
+                m.move_joint(
+                    "eyes",
+                    int(params.get("angle", 0)),
+                    int(params.get("move_time", 500)),
+                )
+            elif cmd == "return_neutral":
+                if hasattr(m, "stand_straight"):
+                    m.stand_straight(int(params.get("move_time", 1000)))
+                else:
+                    for joint in ("left arm", "right arm", "eyes"):
+                        if hasattr(m, "move_joint"):
+                            try:
+                                m.move_joint(joint, 0, int(params.get("move_time", 500)))
+                            except Exception:
+                                pass
+            elif cmd == "disco_color" and hasattr(m, "disco_color"):
+                m.disco_color()
+            elif cmd == "disco_color_eyepicker" and hasattr(m, "disco_color_eyepicker"):
+                m.disco_color_eyepicker()
+        except Exception as e:
+            from botata_client.utils.logger import log
+            log.error(f"Erreur exécution commande '{cmd}': {e}")
 
     def _collect_telemetry(self, m: Any) -> dict[str, Any]:
         battery_level = int(_safe(m, "get_battery_remaining", 0))

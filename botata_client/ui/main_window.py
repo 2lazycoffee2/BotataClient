@@ -1,9 +1,15 @@
-from PyQt6.QtWidgets import QMainWindow, QStatusBar, QLabel
+from PyQt6.QtWidgets import QMainWindow, QStatusBar, QLabel, QTabWidget
 from PyQt6.QtCore import Qt
 
+from botata_client.models.act_rules import StandardColor, DEFAULT_ACT_RULES
 from botata_client.services.robot_connection import RobotConnection
+from botata_client.services.sensor_monitor import SensorMonitor
+from botata_client.services.choreography import ChoreographyEngine
 from botata_client.ui.connection_panel import ConnectionPanel
+from botata_client.ui.monitoring_panel import MonitoringPanel
+from botata_client.ui.color_mapping_panel import ColorMappingPanel
 from botata_client.utils.config import AppConfig
+from botata_client.utils.logger import log
 
 
 class MainWindow(QMainWindow):
@@ -13,15 +19,138 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Botata Client")
         self.resize(self._config.window_width, self._config.window_height)
 
+        # ── Services ──
         self.robot_connection = RobotConnection(self._config, parent=self)
-        self.connection_panel = ConnectionPanel(self.robot_connection, config=self._config)
-        self.setCentralWidget(self.connection_panel)
+        self.sensor_monitor = SensorMonitor(
+            self.robot_connection, config=self._config, parent=self
+        )
+        self.choreography = ChoreographyEngine(
+            self.robot_connection, parent=self
+        )
 
-        sb = QStatusBar(); self.setStatusBar(sb)
-        self.status_connection = QLabel("Déconnecté"); sb.addWidget(self.status_connection)
+        # ── Onglets ──
+        self.tabs = QTabWidget()
+        self.setCentralWidget(self.tabs)
 
-        self.robot_connection.connection_changed.connect(self._on_connection_state_changed)
+        # Onglet 1 : Connexion
+        self.connection_panel = ConnectionPanel(
+            self.robot_connection, config=self._config
+        )
+        self.tabs.addTab(self.connection_panel, "🔌 Connexion")
 
-    def _on_connection_state_changed(self, state):
-        text = "Connecté" if state.name == "CONNECTED" else ("Connexion..." if state.name == "CONNECTING" else "Déconnecté")
+        # Onglet 2 : Monitoring
+        self.monitoring_panel = MonitoringPanel()
+        self.tabs.addTab(self.monitoring_panel, "📊 Monitoring")
+
+        # Onglet 3 : Couleurs
+        self.color_mapping_panel = ColorMappingPanel()
+        self.tabs.addTab(self.color_mapping_panel, "🎨 Couleurs")
+
+        # ── Barre de statut ──
+        sb = QStatusBar()
+        self.setStatusBar(sb)
+        self.status_connection = QLabel("Déconnecté")
+        self.status_battery = QLabel("🔋 —")
+        self.status_color = QLabel("🎨 —")
+        sb.addWidget(self.status_connection)
+        sb.addPermanentWidget(self.status_battery)
+        sb.addPermanentWidget(self.status_color)
+
+        # ── Câblage des signaux ──
+        self._connect_signals()
+
+    def _connect_signals(self) -> None:
+        """Connecte tous les signaux entre services et UI."""
+
+        # Connexion
+        self.robot_connection.connection_changed.connect(
+            self._on_connection_state_changed
+        )
+
+        # Sensor Monitor → Monitoring Panel
+        self.sensor_monitor.battery_updated.connect(
+            self.monitoring_panel.update_battery
+        )
+        self.sensor_monitor.battery_updated.connect(self._on_battery_updated)
+
+        self.sensor_monitor.color_updated.connect(
+            self.monitoring_panel.update_color
+        )
+
+        self.sensor_monitor.color_reading_added.connect(
+            self._on_color_reading
+        )
+
+        self.sensor_monitor.standard_color_detected.connect(
+            self._on_standard_color_detected
+        )
+
+        # Chorégraphie → Monitoring Panel
+        self.choreography.state_changed.connect(
+            self.monitoring_panel.update_choreo_state
+        )
+
+        # Monitoring Panel → Chorégraphie
+        self.monitoring_panel.execute_act_requested.connect(
+            self._on_execute_act
+        )
+        self.monitoring_panel.auto_mode_toggled.connect(
+            self._on_auto_mode_toggled
+        )
+        self.monitoring_panel.neutral_button.clicked.connect(
+            self.choreography.return_to_neutral
+        )
+
+    # ── Handlers ──────────────────────────────────────────────────────
+
+    def _on_connection_state_changed(self, state) -> None:
+        if state.name == "CONNECTED":
+            text = "Connecté"
+            self.sensor_monitor.start()
+            log.info("SensorMonitor démarré après connexion.")
+        elif state.name == "CONNECTING":
+            text = "Connexion..."
+        else:
+            text = "Déconnecté"
+            self.sensor_monitor.stop()
         self.status_connection.setText(text)
+
+    def _on_battery_updated(self, level: int, voltage: float) -> None:
+        icon = "🔋" if level > 20 else "🪫"
+        self.status_battery.setText(f"{icon} {level}%  ({voltage:.1f}V)")
+
+    def _on_color_reading(self, reading) -> None:
+        """Reçoit un ColorReading et met à jour les deux panneaux."""
+        # Panneau couleur : historique
+        self.color_mapping_panel.add_reading(reading)
+
+        # Panneau monitoring : standard + confiance
+        self.monitoring_panel.update_standard_color(
+            reading.standard, reading.confidence
+        )
+
+    def _on_standard_color_detected(self, color: StandardColor) -> None:
+        """Nouvelle couleur standard détectée — met à jour statut + chorégraphie."""
+        self.status_color.setText(f"🎨 {color.name} ({color.display_name})")
+
+        # En mode auto, le moteur de chorégraphie est notifié directement
+        self.choreography.on_color_detected(color)
+
+    def _on_execute_act(self) -> None:
+        """Bouton 'Exécuter ACT' pressé."""
+        color = self.sensor_monitor.last_color
+        if color:
+            self.choreography.execute_for_color(color)
+        else:
+            log.warning("Pas de couleur détectée, impossible d'exécuter ACT.")
+
+    def _on_auto_mode_toggled(self, enabled: bool) -> None:
+        self.choreography.auto_mode = enabled
+
+    # ── Nettoyage ─────────────────────────────────────────────────────
+
+    def closeEvent(self, event) -> None:
+        self.sensor_monitor.stop()
+        self.choreography.stop()
+        self.robot_connection.disconnect_from_robot()
+        super().closeEvent(event)

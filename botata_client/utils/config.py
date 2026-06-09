@@ -26,13 +26,49 @@ class RobotConfig:
 
 
 @dataclass
+class MonitoringConfig:
+    """Configuration du polling capteur et batterie (QTimers)."""
+    battery_poll_interval: float = 10.0   # secondes
+    color_poll_interval: float = 2.0      # secondes
+    battery_low_threshold: int = 20       # pourcentage
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any] | None = None) -> "MonitoringConfig":
+        data = data or {}
+        return cls(
+            battery_poll_interval=data.get("battery_poll_interval", 10.0),
+            color_poll_interval=data.get("color_poll_interval", 2.0),
+            battery_low_threshold=data.get("battery_low_threshold", 20),
+        )
+
+
+@dataclass
+class ColorConfig:
+    """Configuration de la correspondance couleur brute → standard."""
+    tolerance: float = 30.0
+    calibration_file: str = "calibration.json"
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any] | None = None) -> "ColorConfig":
+        data = data or {}
+        return cls(
+            tolerance=data.get("tolerance", 30.0),
+            calibration_file=data.get("calibration_file", "calibration.json"),
+        )
+
+
+@dataclass
 class AppConfig:
     robot: RobotConfig | None = None
+    monitoring: MonitoringConfig | None = None
+    color: ColorConfig | None = None
     window_width: int = 1024
     window_height: int = 680
 
     def __post_init__(self) -> None:
         self.robot = self.robot or RobotConfig()
+        self.monitoring = self.monitoring or MonitoringConfig()
+        self.color = self.color or ColorConfig()
 
     def save(self, path: Path = CONFIG_FILE) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -41,6 +77,15 @@ class AppConfig:
                 "default_ip": self.robot.default_ip,
                 "connection_timeout": self.robot.connection_timeout,
                 "reconnect_delay": self.robot.reconnect_delay,
+            },
+            "monitoring": {
+                "battery_poll_interval": self.monitoring.battery_poll_interval,
+                "color_poll_interval": self.monitoring.color_poll_interval,
+                "battery_low_threshold": self.monitoring.battery_low_threshold,
+            },
+            "color": {
+                "tolerance": self.color.tolerance,
+                "calibration_file": self.color.calibration_file,
             },
             "window_width": self.window_width,
             "window_height": self.window_height,
@@ -65,6 +110,8 @@ class AppConfig:
 
             return cls(
                 robot=RobotConfig.from_dict(data.get("robot", {})),
+                monitoring=MonitoringConfig.from_dict(data.get("monitoring", {})),
+                color=ColorConfig.from_dict(data.get("color", {})),
                 window_width=data.get("window_width", 1024),
                 window_height=data.get("window_height", 680),
             )
