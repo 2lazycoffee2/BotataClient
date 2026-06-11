@@ -42,6 +42,21 @@ class JudgeClient(QObject):
         self._rid = None
         self._log(f"Judge server URL mis à jour : {self._base_url}")
 
+    def establish_session(self) -> None:
+        """Établit une session avec le serveur arbitre en envoyant /hello."""
+        threading.Thread(target=self._establish_session_worker, daemon=True).start()
+
+    def _establish_session_worker(self) -> None:
+        """Établit une session et émet session_started si succès."""
+        with self._lock:
+            if self._rid:
+                return
+            rid = self._hello_sync()
+            if not rid:
+                return
+            self._rid = rid
+            self.session_started.emit(rid)
+
     def send_step(self, color: str, arm: str, exp: str) -> None:
         """Envoie un pas d'arbitrage : couleur, action bras, expression."""
         threading.Thread(
@@ -49,6 +64,10 @@ class JudgeClient(QObject):
             args=(color, arm, exp),
             daemon=True,
         ).start()
+
+    def bye(self) -> None:
+        """Notifie le serveur arbitre que la session est terminée."""
+        threading.Thread(target=self._bye_worker, daemon=True).start()
 
     def start_dance(self, dance: DanceFile) -> None:
         """Envoie le contenu du fichier .dance au serveur et démarre la session."""
@@ -135,6 +154,19 @@ class JudgeClient(QObject):
 
         self.error_occurred.emit("Réponse invalide du serveur arbitre lors de HELLO.")
         return None
+
+    def _bye_worker(self) -> None:
+        rid = self._rid
+        if not rid:
+            return
+
+        self._log("Judge request: POST /bye")
+        response = self._request("POST", "/bye", json_data={"rid": rid})
+        if not isinstance(response, dict):
+            return
+
+        self._log(f"Judge bye response received for rid={rid}")
+        self._rid = None
 
     def _request(
         self,

@@ -3,6 +3,7 @@ from PyQt6.QtCore import Qt
 
 from botata_client.models.act_rules import StandardColor, DEFAULT_ACT_RULES
 from botata_client.models.dance_file import DanceFile, Keyframe
+from botata_client.models.robot import ConnectionState
 from botata_client.services.judge_client import JudgeClient
 from botata_client.services.robot_connection import RobotConnection
 from botata_client.services.sensor_monitor import SensorMonitor
@@ -65,6 +66,7 @@ class MainWindow(QMainWindow):
         sb.addPermanentWidget(self.status_battery)
         sb.addPermanentWidget(self.status_color)
         sb.addPermanentWidget(self.status_score)
+        self._last_connection_state = ConnectionState.DISCONNECTED
 
         # ── Câblage des signaux ──
         self._connect_signals()
@@ -153,13 +155,17 @@ class MainWindow(QMainWindow):
     def _on_connection_state_changed(self, state) -> None:
         if state.name == "CONNECTED":
             text = "Connecté"
+            self.judge_client.establish_session()
             self.sensor_monitor.start()
             log.info("SensorMonitor démarré après connexion.")
         elif state.name == "CONNECTING":
             text = "Connexion..."
         else:
             text = "Déconnecté"
+            if self._last_connection_state == ConnectionState.CONNECTED:
+                self.judge_client.bye()
             self.sensor_monitor.stop()
+        self._last_connection_state = state
         self.status_connection.setText(text)
 
     def _on_battery_updated(self, level: int, voltage: float) -> None:
