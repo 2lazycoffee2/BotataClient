@@ -1,6 +1,6 @@
 {
     "robot": {
-        "default_ip": "192.168.0.111",
+        "default_ip": "192.168.0.121",
         "connection_timeout": 5.0,
         "reconnect_delay": 2.0
     },
@@ -55,6 +55,7 @@
             ]
         }
     },
+    "judge_server_url": "http://192.168.0.117:8080",
     "window_width": 1280,
     "window_height": 800
 }

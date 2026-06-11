@@ -53,6 +53,7 @@ class DanceCreatorPanel(QWidget):
     play_requested = pyqtSignal(list)        # list[Keyframe]
     play_dance_requested = pyqtSignal(object)  # DanceFile
     send_position_requested = pyqtSignal(dict, int)  # joints, move_time
+    return_neutral_requested = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -194,6 +195,16 @@ class DanceCreatorPanel(QWidget):
         btn_reset.clicked.connect(self._on_reset_sliders)
         quick_row.addWidget(btn_reset)
 
+        btn_neutral = QPushButton("⏹ XNT (Neutre)")
+        btn_neutral.setFixedHeight(34)
+        btn_neutral.setStyleSheet(
+            "QPushButton { background-color: #444; color: white; border-radius: 6px; "
+            "font-weight: bold; padding: 0 12px; }"
+            "QPushButton:hover { background-color: #555; }"
+        )
+        btn_neutral.clicked.connect(self._on_return_neutral)
+        quick_row.addWidget(btn_neutral)
+
         left_col.addLayout(quick_row)
         left_col.addStretch()
 
@@ -329,6 +340,9 @@ class DanceCreatorPanel(QWidget):
         kf = self._get_current_keyframe()
         self._keyframes.append(kf)
         self._add_keyframe_to_table(kf, len(self._keyframes))
+
+    def _on_return_neutral(self) -> None:
+        self.return_neutral_requested.emit()
 
     def _add_keyframe_to_table(self, kf: Keyframe, index: int) -> None:
         row = self._timeline_table.rowCount()

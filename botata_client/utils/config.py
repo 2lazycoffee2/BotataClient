@@ -84,6 +84,7 @@ class AppConfig:
     robot: RobotConfig | None = None
     monitoring: MonitoringConfig | None = None
     color: ColorConfig | None = None
+    judge_server_url: str = "http://127.0.0.1:8080"
     window_width: int = 1024
     window_height: int = 680
 
@@ -110,6 +111,7 @@ class AppConfig:
                 "calibration_file": self.color.calibration_file,
                 "references": self.color.references,
             },
+            "judge_server_url": self.judge_server_url,
             "window_width": self.window_width,
             "window_height": self.window_height,
         }
@@ -135,6 +137,7 @@ class AppConfig:
                 robot=RobotConfig.from_dict(data.get("robot", {})),
                 monitoring=MonitoringConfig.from_dict(data.get("monitoring", {})),
                 color=ColorConfig.from_dict(data.get("color", {})),
+                judge_server_url=data.get("judge_server_url", "http://127.0.0.1:8080"),
                 window_width=data.get("window_width", 1024),
                 window_height=data.get("window_height", 680),
             )

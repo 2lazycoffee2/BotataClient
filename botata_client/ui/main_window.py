@@ -2,6 +2,8 @@ from PyQt6.QtWidgets import QMainWindow, QStatusBar, QLabel, QTabWidget
 from PyQt6.QtCore import Qt
 
 from botata_client.models.act_rules import StandardColor, DEFAULT_ACT_RULES
+from botata_client.models.dance_file import DanceFile, Keyframe
+from botata_client.services.judge_client import JudgeClient
 from botata_client.services.robot_connection import RobotConnection
 from botata_client.services.sensor_monitor import SensorMonitor
 from botata_client.services.choreography import ChoreographyEngine
@@ -28,6 +30,7 @@ class MainWindow(QMainWindow):
         self.choreography = ChoreographyEngine(
             self.robot_connection, parent=self
         )
+        self.judge_client = JudgeClient(self._config.judge_server_url, parent=self)
 
         # ── Onglets ──
         self.tabs = QTabWidget()
@@ -57,9 +60,11 @@ class MainWindow(QMainWindow):
         self.status_connection = QLabel("Déconnecté")
         self.status_battery = QLabel("🔋 —")
         self.status_color = QLabel("🎨 —")
+        self.status_score = QLabel("Score : —")
         sb.addWidget(self.status_connection)
         sb.addPermanentWidget(self.status_battery)
         sb.addPermanentWidget(self.status_color)
+        sb.addPermanentWidget(self.status_score)
 
         # ── Câblage des signaux ──
         self._connect_signals()
@@ -114,12 +119,33 @@ class MainWindow(QMainWindow):
             self._on_calibration_requested
         )
 
-        # Dance Creator Panel → Chorégraphie
+        # Dance Creator Panel → MainWindow
         self.dance_creator_panel.play_requested.connect(
-            self.choreography.play_keyframes
+            self._on_play_keyframes
         )
         self.dance_creator_panel.send_position_requested.connect(
             self._on_send_position
+        )
+        self.dance_creator_panel.return_neutral_requested.connect(
+            self.choreography.return_to_neutral
+        )
+
+        # Choreography → Judge Client
+        self.choreography.keyframe_started.connect(
+            self._on_keyframe_started
+        )
+
+        # Judge Client → UI
+        self.judge_client.score_updated.connect(self._on_score_updated)
+        self.judge_client.session_started.connect(
+            lambda rid: self.status_score.setText(f"Score : — (session {rid})")
+        )
+        self.judge_client.error_occurred.connect(self._on_judge_error)
+        self.judge_client.log_message.connect(
+            self.connection_panel.append_server_log
+        )
+        self.connection_panel.judge_server_url_changed.connect(
+            self.judge_client.set_base_url
         )
 
     # ── Handlers ──────────────────────────────────────────────────────
@@ -185,6 +211,54 @@ class MainWindow(QMainWindow):
         self.robot_connection.send_command(
             "move_joints", joints=joints, move_time=move_time
         )
+        color, arm, exp = self._make_step_payload(joints, None)
+        self.judge_client.send_step(color, arm, exp)
+
+    def _on_play_keyframes(self, keyframes: list[Keyframe]) -> None:
+        dance = DanceFile(
+            name="Session Chorégraphie",
+            mvs=len(keyframes),
+            tempo=keyframes[0].move_time if keyframes else 800,
+            keyframes=list(keyframes),
+        )
+        self.judge_client.start_dance(dance)
+        self.choreography.play_keyframes(keyframes)
+
+    def _on_keyframe_started(self, kf: Keyframe) -> None:
+        color, arm, exp = self._make_step_payload(kf.joints, kf.eye_color)
+        self.judge_client.send_step(color, arm, exp)
+
+    def _make_step_payload(
+        self,
+        joints: dict[str, int],
+        eye_color: tuple[int, int, int] | None,
+    ) -> tuple[str, str, str]:
+        color = (
+            self.sensor_monitor.last_color.name
+            if self.sensor_monitor.last_color
+            else "N"
+        )
+        arms: list[str] = []
+        left_arm = joints.get("left arm", 0)
+        right_arm = joints.get("right arm", 0)
+        if left_arm > 0:
+            arms.append("ALU")
+        elif left_arm < 0:
+            arms.append("ALB")
+        if right_arm > 0:
+            arms.append("ARU")
+        elif right_arm < 0:
+            arms.append("ARB")
+        arm = "+".join(arms) if arms else "XNT"
+        exp = "XSD" if eye_color and eye_color != (255, 255, 255) else "XNT"
+        return color, arm, exp
+
+    def _on_score_updated(self, score: int) -> None:
+        self.status_score.setText(f"Score : {score}")
+
+    def _on_judge_error(self, message: str) -> None:
+        log.error(message)
+        self.status_score.setText("Score : erreur")
 
     # ── Nettoyage ─────────────────────────────────────────────────────
 

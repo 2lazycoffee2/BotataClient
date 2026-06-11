@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, QListWidget
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QLineEdit, QListWidget, QTextEdit
 from PyQt6.QtCore import pyqtSignal
 
 from botata_client.models.robot import RobotInfo, ConnectionState
@@ -10,6 +10,7 @@ from botata_client.utils.config import AppConfig
 class ConnectionPanel(QWidget):
     connected = pyqtSignal(str)
     disconnected = pyqtSignal()
+    judge_server_url_changed = pyqtSignal(str)
 
     def __init__(self, connection: RobotConnection, config: AppConfig | None = None, parent=None):
         super().__init__(parent)
@@ -26,15 +27,45 @@ class ConnectionPanel(QWidget):
         self.scan = QPushButton("Scanner")
         self.connect_btn = QPushButton("Connecter")
         self.ip = QLineEdit(self._config.robot.default_ip)
+        self.server_url = QLineEdit(self._config.judge_server_url)
+        self.server_url_apply = QPushButton("Appliquer")
         self.list = QListWidget()
+        self.server_log = QTextEdit()
+        self.server_log.setReadOnly(True)
+        self.server_log.setPlaceholderText("Journal des échanges serveur arbitre...")
+        self.server_log.setMinimumHeight(180)
+
         l.addWidget(QLabel("Connexion Marty"))
         hl.addWidget(self.scan); hl.addWidget(self.ip); hl.addWidget(self.connect_btn)
-        l.addLayout(hl); l.addWidget(self.list)
+        l.addLayout(hl)
+        l.addWidget(QLabel("Adresse du serveur arbitre"))
+        url_layout = QHBoxLayout()
+        url_layout.addWidget(self.server_url)
+        url_layout.addWidget(self.server_url_apply)
+        l.addLayout(url_layout)
+        l.addWidget(self.list)
+        l.addWidget(QLabel("Journal serveur"))
+        l.addWidget(self.server_log)
 
     def _bind(self):
         self.scan.clicked.connect(self._on_scan)
         self.connect_btn.clicked.connect(self._on_connect_manual)
+        self.server_url_apply.clicked.connect(self._on_apply_server_url)
         self._connection.connection_changed.connect(self._on_connection_changed)
+
+    def _on_apply_server_url(self):
+        url = self.server_url.text().strip()
+        if not url:
+            return
+
+        if not url.startswith("http://") and not url.startswith("https://"):
+            url = f"http://{url}"
+
+        self.server_url.setText(url)
+        self._config.judge_server_url = url
+        self._config.save()
+        self.judge_server_url_changed.emit(url)
+        self.append_server_log(f"Serveur arbitre configuré sur : {url}")
 
     def _on_scan(self):
         self.list.clear(); self._found.clear()
@@ -76,3 +107,6 @@ class ConnectionPanel(QWidget):
             self.connect_btn.setText("Connecter")
             self.connect_btn.setStyleSheet("background-color: #5cb85c; color: white; font-weight: bold;")
             self.connect_btn.setEnabled(True)
+
+    def append_server_log(self, message: str) -> None:
+        self.server_log.append(message)

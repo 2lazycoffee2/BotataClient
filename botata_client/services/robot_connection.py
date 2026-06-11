@@ -19,6 +19,7 @@ class _Worker(QThread):
         self._stop = False
         self._command_queue: queue.Queue[tuple[str, dict[str, Any]]] = queue.Queue()
         self._client: Any | None = None
+        self._last_sent_joints: dict[str, int] = {}  # Cache des angles pour éviter le spam
 
     def run(self):
         try:
@@ -109,11 +110,37 @@ class _Worker(QThread):
                 # Envoyer plusieurs joints simultanément (keyframe complet)
                 joints = params.get("joints", {})
                 move_time = int(params.get("move_time", 800))
-                for joint_name, angle in joints.items():
-                    try:
-                        m.move_joint(joint_name, int(angle), move_time)
-                    except Exception:
-                        pass
+                
+                # Intercaler gauche/droite pour masquer la latence réseau
+                ordered_joints = [
+                    "left hip", "right hip",
+                    "left twist", "right twist",
+                    "left knee", "right knee",
+                    "left arm", "right arm",
+                    "eyes"
+                ]
+                for joint_name in ordered_joints:
+                    if joint_name in joints:
+                        target_angle = int(joints[joint_name])
+                        # Ne pas renvoyer la commande si le joint est déjà à cet angle
+                        if self._last_sent_joints.get(joint_name) == target_angle:
+                            continue
+                        
+                        self._last_sent_joints[joint_name] = target_angle
+                        
+                        try:
+                            # Contournement : m.move_joint() est synchrone dans martypy (il attend le "ok").
+                            # On passe directement par sendRICRESTURL pour du vrai "fire-and-forget" simultané.
+                            joint_id = m.JOINT_IDS.get(joint_name)
+                            if joint_id is not None:
+                                url = f"traj/joint?jointID={joint_id}&angle={target_angle}&moveTime={move_time}"
+                                if hasattr(m, 'client') and hasattr(m.client, 'ricIF'):
+                                    m.client.ricIF.sendRICRESTURL(url)
+                                else:
+                                    # Fallback
+                                    m.move_joint(joint_name, target_angle, move_time)
+                        except Exception:
+                            pass
         except Exception as e:
             from botata_client.utils.logger import log
             log.error(f"Erreur exécution commande '{cmd}': {e}")

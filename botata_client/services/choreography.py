@@ -29,6 +29,7 @@ class ChoreographyEngine(QObject):
     sequence_finished = pyqtSignal()
     neutral_restored = pyqtSignal()
     state_changed = pyqtSignal(str)            # état lisible pour l'UI
+    keyframe_started = pyqtSignal(object)      # (Keyframe)
 
     # Délais entre phases (ms)
     EXPRESSION_DELAY = 500
@@ -264,6 +265,7 @@ class ChoreographyEngine(QObject):
         total = len(self._kf_list)
         self.state_changed.emit(f"Keyframe {idx}/{total}")
         self.step_started.emit(self._kf_index, f"KF{idx} (time={kf.move_time}ms)")
+        self.keyframe_started.emit(kf)
 
         # Envoyer les joints
         self._connection.send_command(

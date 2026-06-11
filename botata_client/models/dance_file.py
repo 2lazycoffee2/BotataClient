@@ -18,9 +18,11 @@ from typing import Optional
 
 # Articulations disponibles sur Marty V2
 JOINT_NAMES: list[str] = [
-    "left hip", "left twist", "left knee",
-    "right hip", "right twist", "right knee",
-    "left arm", "right arm", "eyes",
+    "left hip", "right hip",
+    "left twist", "right twist",
+    "left knee", "right knee",
+    "left arm", "right arm",
+    "eyes",
 ]
 
 JOINT_IDS: dict[str, int] = {name: i for i, name in enumerate(JOINT_NAMES)}
