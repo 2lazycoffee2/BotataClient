@@ -52,6 +52,20 @@ _REFERENCE_COLORS: dict[StandardColor, tuple[int, int, int]] = {
     StandardColor.W: (255, 255, 255),
 }
 
+# ─── Mapping Expression → Couleur des yeux ────────────────────────────
+
+EXPRESSION_EYE_COLORS: dict[str, tuple[int, int, int]] = {
+    "XNT": (0, 0, 0),           # Air neutre : Éteints
+    "XSD": (0, 0, 255),         # Air triste : Bleus
+    "XNG": (255, 0, 0),         # Air énervé : Rouges
+    "XHP": (0, 255, 0),         # Air content : Verts
+    "XDN": (255, 165, 0),       # Air enjoué : Arc-en-ciel (orange comme approximation)
+}
+
+def get_eye_color_for_expression(expression_code: str) -> tuple[int, int, int]:
+    """Retourne la couleur des yeux pour un code d'expression."""
+    return EXPRESSION_EYE_COLORS.get(expression_code, (0, 0, 0))
+
 def init_references(config: Any) -> None:
     """Initialise les couleurs de référence depuis la configuration."""
     for std_color in StandardColor:
