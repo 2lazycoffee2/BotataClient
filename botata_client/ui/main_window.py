@@ -266,6 +266,29 @@ class MainWindow(QMainWindow):
         log.error(message)
         self.status_score.setText("Score : erreur")
 
+    # ── Événements Clavier (Téléopération) ────────────────────────────
+
+    def keyPressEvent(self, event) -> None:
+        # Ignorer la répétition automatique des touches pour éviter le spam
+        if event.isAutoRepeat():
+            return
+            
+        if self.robot_connection.state != ConnectionState.CONNECTED:
+            super().keyPressEvent(event)
+            return
+
+        key = event.key()
+        if key == Qt.Key.Key_Up:
+            self.robot_connection.enqueue_command("walk", {"num_steps": 1, "step_length": 25})
+        elif key == Qt.Key.Key_Down:
+            self.robot_connection.enqueue_command("walk", {"num_steps": 1, "step_length": -25})
+        elif key == Qt.Key.Key_Left:
+            self.robot_connection.enqueue_command("sidestep", {"side": "left", "steps": 1})
+        elif key == Qt.Key.Key_Right:
+            self.robot_connection.enqueue_command("sidestep", {"side": "right", "steps": 1})
+        else:
+            super().keyPressEvent(event)
+
     # ── Nettoyage ─────────────────────────────────────────────────────
 
     def closeEvent(self, event) -> None:

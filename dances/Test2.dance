@@ -1,0 +1,7 @@
+# Fichier .dance - Botata Client
+NAME: Test
+MVS: 1
+TEMPO: 200
+
+KEYFRAMES:
+  KF1: left_hip=0 right_hip=0 left_twist=0 right_twist=0 left_knee=0 right_knee=0 left_arm=100 right_arm=100 eyes=0 | time=200

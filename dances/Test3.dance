@@ -1,0 +1,16 @@
+# Fichier .dance - Botata Client
+NAME: Nouvelle Choregraphie
+MVS: 10
+TEMPO: 800
+
+KEYFRAMES:
+  KF1: left_hip=0 right_hip=0 left_twist=0 right_twist=0 left_knee=0 right_knee=0 left_arm=-100 right_arm=-100 eyes=0 | time=800
+  KF2: left_hip=0 right_hip=0 left_twist=0 right_twist=0 left_knee=0 right_knee=0 left_arm=100 right_arm=100 eyes=0 | time=800
+  KF3: left_hip=0 right_hip=0 left_twist=0 right_twist=0 left_knee=0 right_knee=0 left_arm=-100 right_arm=-100 eyes=0 | time=800
+  KF4: left_hip=0 right_hip=0 left_twist=0 right_twist=0 left_knee=0 right_knee=0 left_arm=100 right_arm=100 eyes=0 | time=800
+  KF5: left_hip=0 right_hip=0 left_twist=0 right_twist=0 left_knee=0 right_knee=0 left_arm=-100 right_arm=-100 eyes=0 | time=800
+  KF6: left_hip=0 right_hip=0 left_twist=0 right_twist=0 left_knee=0 right_knee=0 left_arm=100 right_arm=100 eyes=0 | time=800
+  KF7: left_hip=0 right_hip=0 left_twist=0 right_twist=0 left_knee=0 right_knee=0 left_arm=-97 right_arm=-79 eyes=0 | time=800
+  KF8: left_hip=0 right_hip=0 left_twist=0 right_twist=0 left_knee=0 right_knee=0 left_arm=100 right_arm=100 eyes=0 | time=800
+  KF9: left_hip=0 right_hip=0 left_twist=0 right_twist=0 left_knee=0 right_knee=0 left_arm=-100 right_arm=-100 eyes=0 | time=800
+  KF10: left_hip=0 right_hip=0 left_twist=0 right_twist=0 left_knee=0 right_knee=0 left_arm=100 right_arm=100 eyes=0 | time=800

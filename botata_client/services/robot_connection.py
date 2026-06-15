@@ -70,6 +70,13 @@ class _Worker(QThread):
                     step_length=int(params.get("step_length", 25)),
                     move_time=int(params.get("move_time", 1500)),
                 )
+            elif cmd == "sidestep" and hasattr(m, "sidestep"):
+                m.sidestep(
+                    side=params.get("side", "left"),
+                    steps=int(params.get("steps", 1)),
+                    step_length=int(params.get("step_length", 35)),
+                    move_time=int(params.get("move_time", 1000)),
+                )
             elif cmd == "arms" and hasattr(m, "arms"):
                 m.arms(
                     int(params.get("left_angle", 0)),

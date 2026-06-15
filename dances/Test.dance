@@ -1,0 +1,10 @@
+# Fichier .dance - Botata Client
+NAME: Nouvelle Choregraphie
+MVS: 4
+TEMPO: 800
+
+KEYFRAMES:
+  KF1: left_hip=1 right_hip=2 left_twist=0 right_twist=0 left_knee=0 right_knee=0 left_arm=77 right_arm=0 eyes=0 | time=800
+  KF2: left_hip=1 right_hip=2 left_twist=0 right_twist=0 left_knee=0 right_knee=0 left_arm=-7 right_arm=0 eyes=0 | time=800
+  KF3: left_hip=1 right_hip=2 left_twist=0 right_twist=0 left_knee=0 right_knee=0 left_arm=-53 right_arm=0 eyes=0 | time=800
+  KF4: left_hip=1 right_hip=2 left_twist=0 right_twist=0 left_knee=0 right_knee=0 left_arm=21 right_arm=0 eyes=0 | time=800
