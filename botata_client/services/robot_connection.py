@@ -91,14 +91,12 @@ class _Worker(QThread):
                 )
             elif cmd == "eyes_color" and hasattr(m, "disco_color"):
                 color = params.get("color", (255, 255, 255))
-                add_on = params.get("add_on", "eyes")
-                m.disco_color(color, add_on)
-            elif cmd == "eyebrows" and hasattr(m, "move_joint"):
-                m.move_joint(
-                    "eyes",
-                    int(params.get("angle", 0)),
-                    int(params.get("move_time", 500)),
-                )
+                # On utilise 'all' pour les LEDs et 'all' pour la région comme demandé
+                m.disco_color(color, "all", "all")
+            elif cmd == "eyebrows" and hasattr(m, "eyes"):
+                # Utiliser m.eyes() qui accepte un angle ou une expression (ex: "angry", "normal")
+                pose_or_angle = params.get("pose_or_angle", params.get("angle", 0))
+                m.eyes(pose_or_angle, int(params.get("move_time", 500)))
             elif cmd == "return_neutral":
                 if hasattr(m, "stand_straight"):
                     m.stand_straight(int(params.get("move_time", 1000)))
