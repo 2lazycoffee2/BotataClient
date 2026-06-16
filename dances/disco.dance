@@ -1,0 +1,23 @@
+# Fichier .dance - Botata Client
+NAME: Disco
+MVS: 6
+TEMPO: 800
+
+SEQ: R, G, C, Y, P, B
+
+ACT:
+  R -> eyes=(255,0,0) brows=20 arms=ARU+ALB step=3B
+  G -> eyes=(0,255,0) brows=-20 step=3L
+  C -> eyes=(0,255,255) brows=0 arms=ALU+ARU step=3R
+  Y -> eyes=(255,255,0) brows=-20 step=2U
+  P -> eyes=(255,0,255) brows=-20 arms=ARB+ALB step=2U
+  B -> eyes=(0,0,255) brows=-10 step=1B
+  N -> eyes=(0,0,0) brows=20
+
+KEYFRAMES:
+  KF1: left_hip=-20 right_hip=-20 left_arm=-90 right_arm=-90 eyes=20 | time=800 eyes_rgb=(255,0,0)
+  KF2: left_twist=20 right_twist=20 left_arm=0 right_arm=0 eyes=-20 | time=800 eyes_rgb=(0,255,0)
+  KF3: left_twist=-20 right_twist=-20 left_arm=90 right_arm=-90 eyes=0 | time=800 eyes_rgb=(0,255,255)
+  KF4: left_hip=20 right_hip=20 left_arm=0 right_arm=0 eyes=-20 | time=800 eyes_rgb=(255,255,0)
+  KF5: left_hip=20 right_hip=20 left_arm=-90 right_arm=90 eyes=-20 | time=800 eyes_rgb=(255,0,255)
+  KF6: left_hip=-10 right_hip=-10 left_arm=0 right_arm=0 eyes=-10 | time=800 eyes_rgb=(0,0,255)

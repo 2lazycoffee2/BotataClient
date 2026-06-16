@@ -256,7 +256,15 @@ class MainWindow(QMainWindow):
         elif right_arm < 0:
             arms.append("ARB")
         arm = "+".join(arms) if arms else "XNT"
-        exp = "XSD" if eye_color and eye_color != (255, 255, 255) else "XNT"
+        eyes_val = joints.get("eyes", 0)
+        if eyes_val >= 20:
+            exp = "XNG"
+        elif eyes_val <= -20:
+            exp = "XSD"
+        elif eyes_val < 0:
+            exp = "XHP"
+        else:
+            exp = "XNT"
         return color, arm, exp
 
     def _on_score_updated(self, score: int) -> None:
@@ -279,13 +287,13 @@ class MainWindow(QMainWindow):
 
         key = event.key()
         if key == Qt.Key.Key_Up:
-            self.robot_connection.enqueue_command("walk", {"num_steps": 1, "step_length": 25})
+            self.robot_connection.send_command("walk", num_steps=1, step_length=25)
         elif key == Qt.Key.Key_Down:
-            self.robot_connection.enqueue_command("walk", {"num_steps": 1, "step_length": -25})
+            self.robot_connection.send_command("walk", num_steps=1, step_length=-25)
         elif key == Qt.Key.Key_Left:
-            self.robot_connection.enqueue_command("sidestep", {"side": "left", "steps": 1})
+            self.robot_connection.send_command("sidestep", side="left", steps=1)
         elif key == Qt.Key.Key_Right:
-            self.robot_connection.enqueue_command("sidestep", {"side": "right", "steps": 1})
+            self.robot_connection.send_command("sidestep", side="right", steps=1)
         else:
             super().keyPressEvent(event)
 
